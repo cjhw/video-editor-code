@@ -1,0 +1,18 @@
+$border-color: #222;
+$resource-border-color: #999;
+$resource-width: 300px;
+::-webkit-scrollbar {
+    width: 5px;
+    height: 10px;
+    background-color: #ebeef5;
+}
+::-webkit-scrollbar-thumb {
+    box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+    -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+    background-color: #ccc;
+}
+::-webkit-scrollbar-track {
+    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 1);
+}
