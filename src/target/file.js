@@ -31,6 +31,7 @@ export default class ResourceFile {
     this.audioType = "";
     this.audioRate = "";
     this.audioInfo = "";
+    this.resourcePath = "";
     // 序列帧
     this.track = [];
     this.setDate();
@@ -50,6 +51,9 @@ export default class ResourceFile {
   }
   isAudio() {
     return this.mime.indexOf("audio") !== -1;
+  }
+  setResourcePath(path) {
+    this.resourcePath = path;
   }
   setMedia() {
     this.fileType = "media";

@@ -57,6 +57,7 @@ export default class Ffmpeg {
     // console.log('加载的文件',file)
     return new Promise(async (resolve) => {
       const filePath = "/" + this.resourceDir + "/" + file.getFSName();
+      file.setResourcePath(filePath);
       const fileData = await fetchFile(file.getFile());
       console.log("fileData", fileData);
       this.ffmpeg.FS("writeFile", filePath, fileData);
@@ -76,8 +77,8 @@ export default class Ffmpeg {
           console.log("全部日志", this.message);
           file.setInfo(this.fileInfoFilter(this.message));
           this.clearMessage();
-          const track = await this.generateFrame(filePath);
-          file.setTrack(track);
+          // const track = await this.generateFrame(filePath);
+          // file.setTrack(track);
           resolve();
         });
       } else if (file.isAudio()) {
@@ -103,19 +104,19 @@ export default class Ffmpeg {
     });
   }
 
-  static async generateFrame(filePath) {
+  static async generateFrame(filePath, frameDir) {
     console.log("生成序列帧");
     const track = [];
-    this.ffmpeg.FS("mkdir", this.frameDir);
-    let cmd = `-i ${filePath} -r 1 -q:v 2 -f image2 /${this.frameDir}/%3d.jpeg`;
+    this.ffmpeg.FS("mkdir", frameDir);
+    let cmd = `-i ${filePath} -r 1 -q:v 2 -f image2 /${frameDir}/%3d.jpeg`;
     let args = cmd.split(" ");
     console.log("args", args);
     await this.ffmpeg.run(...args);
-    const fileList = this.ffmpeg.FS("readdir", "/" + this.frameDir);
+    const fileList = this.ffmpeg.FS("readdir", "/" + frameDir);
     console.log("文件列表", fileList);
     fileList.forEach((v) => {
       if (v !== "." && v !== "..") {
-        const path = this.frameDir + "/" + v;
+        const path = frameDir + "/" + v;
         const img = this.ffmpeg.FS("readFile", path);
         let imgData = URL.createObjectURL(
           new Blob([img.buffer], { type: "image/jpeg" })
@@ -277,11 +278,19 @@ export default class Ffmpeg {
         // textCmdList.push('drawtext=fontsize=60:fontfile=\'/' + this.resourceDir +'/' +time.getFont() + '\':text=' + time.name + ':fontcolor=green:enable=\'between(t,' + time.getLeftSecond() +','+(time.getLeftSecond() + 6)+')\':box=1:boxcolor=yellow')
       }
     });
+    // const textCmd = '-vf "' + textCmdList.join(',') + '"'
+    // console.log('文字命令',textCmd)
+    // cmd.push(textCmd)
+    // 添加最后输出文明
     cmd.push(this.renderFileName);
     // 命令生成
     let args = cmd.join(" ");
     args = args.split(" ");
     console.log("命令", args);
+    // const cmd = '-i infile -vf movie=watermark.png,colorkey=white:0.01:1.0[wm];[in][wm]overlay=30:10[out] outfile.mp4'
+    // const cmd = '-re -i infile -vf drawtext=fontsize=60:fontfile=\'font\':text=\'%{localtime\\:%Y\\-%m\\-%d%H-%M-%S}\':fontcolor=green:box=1:boxcolor=yellow outfile.mp4'
+    // let args = cmd.split(' ')
+    // console.log('args',args)
     return args;
   }
 

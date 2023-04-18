@@ -4,7 +4,7 @@ import { uuid } from "@/utils/index.js";
  * 时间揍单个数据
  */
 export default class Line {
-  leftTime = 4;
+  leftTime = 160;
   constructor(file) {
     // 时间轴唯一
     this.key = uuid();

@@ -26,6 +26,9 @@
           @dblclick="appendFile(item)"
         />
       </div>
+      <div class="tool-bar">
+        <tool-tab @create="handleCreateText" @render="handleRender" />
+      </div>
     </div>
     <div class="view">
       <div class="window">
@@ -47,7 +50,7 @@
         <div
           class="line"
           draggable="true"
-          v-for="(file, index) in timeLineList"
+          v-for="(file, index) in filterTimeLineList"
           :title="file.name"
           :style="{
             width: file.width + 'px',
@@ -65,7 +68,6 @@
           {{ file.name }}
         </div>
       </div>
-      <div class="tool-bar"></div>
     </div>
     <!--加载弹窗-->
     <progress-dialog
@@ -83,12 +85,13 @@
 </template>
 
 <script setup>
-import { ref, reactive } from "vue";
+import { ref, reactive, computed } from "vue";
 import ResourceItem from "@/components/resource-item.vue";
 import ProgressDialog from "@/components/progress-dialog.vue";
 import ResourceFile from "@/target/file.js";
 import Line from "@/target/line.js";
-import { checkMediaFile, checkFontFile } from "@/utils/index.js";
+import ToolTab from "@/components/tool-tab.vue";
+import { checkMediaFile, checkFontFile, uuid } from "@/utils/index.js";
 import ft from "@/utils/ffmpeg.js";
 
 ft.instance();
@@ -118,6 +121,7 @@ const addFile = (type) => {
 const changeFile = function (e) {
   const files = e.target.files;
   const mediaLoadList = [];
+  const fontLoadList = [];
   console.log("文件列表", files);
   for (let i = 0; i < files.length; i++) {
     const file = new ResourceFile(files[i]);
@@ -159,10 +163,8 @@ const loadMediaFile = async (list) => {
   for (const file of list) {
     await ft.loadFile(file);
     mediaList.push(file);
-    if (file.track.length > 0) {
-      track.value.push(...file.track);
-      console.log(track.value);
-    }
+    const frames = await ft.generateFrame(file.resourcePath, uuid());
+    file.setTrack(frames);
     i++;
     setLoadProgressNumber(i);
   }
@@ -221,7 +223,7 @@ const fileDragStart = ($event, file) => {
   console.log("文件列表拖拽开始", $event, file);
   dragType = "create";
   nowFile.value = file;
-  let width = nowFile.value.duration * 2;
+  let width = nowFile.value.duration * 160;
   moveBlock.value.style.width = (width > 270 ? 270 : width) + "px";
   $event.dataTransfer.setDragImage(moveBlock.value, 0, 0);
 };
@@ -241,6 +243,7 @@ const fileDragEnd = ($event, file) => {
 const appendFile = (item) => {
   console.log("双击添加", item);
   const file = new Line(item);
+  track.value = item.track;
   file.setMedia();
   console.log("file", file);
   timeLineList.value.push(file);
@@ -248,6 +251,9 @@ const appendFile = (item) => {
 
 // 时间轴
 const timeLineList = ref([]);
+const filterTimeLineList = computed(() => {
+  return timeLineList.value.filter((time) => time.type !== "media");
+});
 const moveStartPosition = ref({ x: 0, y: 0 });
 let moveIndex = "";
 let moveIn = "";
@@ -268,6 +274,7 @@ const lineItemDropFile = (index) => {
   // 放在某个轴上
   if (dragType === "create") {
     const file = new Line(mediaList[index]);
+    track.value = mediaList[index].track;
     file.setMedia();
     console.log("file", file);
     timeLineList.value.splice(index, 0, file);
@@ -388,11 +395,51 @@ const lineDropFile = ($event) => {
   // 放在空的地方
   if (dragType === "create") {
     let file = new Line(nowFile.value);
+    track.value = nowFile.value.track;
     file.setMedia();
     console.log("file", file);
     timeLineList.value.push(file);
   }
 };
+
+const handleCreateText = (text, time) => {
+  let data = {
+    key: "",
+    name: text,
+    duration: time || 3,
+    left: 0,
+  };
+  const item = new Line(data);
+  item.setText();
+  item.setFont(fontList[0]?.getFSName());
+  console.log("添加", item, fontList[0]?.getFSName());
+  timeLineList.value.push(item);
+};
+const handleRender = () => {
+  console.log("渲染视频");
+  console.log(timeLineList);
+  let args = ft.generateArgs(timeLineList.value);
+  ft.run(args);
+  console.log("ft.progress", ft.progress);
+  openLoadProgress(100, "渲染中");
+  ft.updateProgress = updateRender;
+};
+const updateRender = (progress) => {
+  setLoadProgressNumber(parseInt(progress.ratio));
+  if (progress.ratio >= 100) {
+    setTimeout(() => {
+      closeLoadProgress();
+      previewRender();
+    }, 1000);
+  }
+};
+const previewRender = () => {
+  ft.readFile(ft.renderFileName).then((res) => {
+    console.log("文件", res);
+    renderSrc.value = res;
+  });
+};
+window.ft = ft;
 </script>
 
 <style lang="scss" scoped>
@@ -418,9 +465,15 @@ const lineDropFile = ($event) => {
   }
   .file-list {
     width: 300px;
-    height: 100%;
+    height: calc(100% - 200px);
     overflow-y: auto;
     overflow-x: hidden;
+  }
+
+  .tool-bar {
+    display: flex;
+    height: 200px;
+    justify-content: space-around;
   }
 }
 .view {
