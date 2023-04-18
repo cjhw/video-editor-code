@@ -33,3 +33,25 @@ export function checkMediaFile(file) {
   });
   return status;
 }
+export function checkFontFile(file) {
+  if (file.type) {
+    return false;
+  }
+  let status = false;
+  let nameSplit = file.name.split(".");
+  let fileExt = nameSplit[nameSplit.length - 1].toLowerCase();
+  fontExt.forEach((type) => {
+    if (fileExt.indexOf(type) !== -1) {
+      status = true;
+    }
+  });
+  return status;
+}
+
+// 随机颜色
+export function randColor() {
+  const r = parseInt(Math.random() * 255);
+  const g = parseInt(Math.random() * 255);
+  const b = parseInt(Math.random() * 255);
+  return `rgb(${r},${g},${b})`;
+}

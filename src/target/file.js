@@ -43,11 +43,19 @@ export default class ResourceFile {
   isVideo() {
     return this.mime.indexOf("video") !== -1;
   }
+  isImage() {
+    return this.mime.indexOf("image") !== -1;
+  }
   isAudio() {
     return this.mime.indexOf("audio") !== -1;
   }
   setMedia() {
     this.fileType = "media";
+    this.mime = this.file.type.split(",")[0];
+    this.ext = this.name.split(".")[this.name.split(".").length - 1];
+  }
+  setPicture() {
+    this.fileType = "picture";
     this.mime = this.file.type.split(",")[0];
     this.ext = this.name.split(".")[this.name.split(".").length - 1];
   }

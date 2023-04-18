@@ -10,8 +10,8 @@
       />
       <div class="handle-wrapper">
         <a-button type="primary" @click="addFile('media')">添加媒体</a-button>
-        <a-button type="primary">添加媒体</a-button>
-        <a-button type="primary">添加媒体</a-button>
+        <a-button type="primary" @click="addFile('picture')">添加图片</a-button>
+        <a-button type="primary" @click="addFile('font')">添加字体</a-button>
       </div>
       <div class="file-list">
         <resource-item
@@ -21,6 +21,9 @@
           :key="item.key"
           @play="handlePlay(item)"
           @del="handleDel(index)"
+          @dragstart.private="fileDragStart($event, item)"
+          @dragend.private="fileDragEnd($event, item)"
+          @dblclick="appendFile(item)"
         />
       </div>
     </div>
@@ -33,8 +36,33 @@
           <video :src="renderSrc" controls autoplay></video>
         </div>
       </div>
-      <div class="time-line">
-        <div class="line"></div>
+      <div
+        class="time-line"
+        @dragenter="lineDragEnter"
+        @dragleave="lineDragLeave"
+        @dragover="lineDragOver"
+        @drop="lineDropFile"
+      >
+        <span
+          class="line"
+          draggable="true"
+          v-for="(file, index) in timeLineList"
+          :title="file.name"
+          :style="{
+            width: file.width + 'px',
+            'margin-left': file.left + 'px',
+            background: file.color,
+          }"
+          :key="'timeLine' + file.key"
+          @dragstart="lineDragStart($event, index)"
+          @dragend="lineDragEnd"
+          @dragenter="lineItemDragEnter($event, index)"
+          @dragleave="lineItemDragLeave"
+          @dragover="lineItemDragMove"
+          @drop.prevent.stop="lineItemDropFile(index)"
+        >
+          {{ file.name }}
+        </span>
       </div>
       <div class="tool-bar"></div>
     </div>
@@ -45,6 +73,11 @@
       :number="progressNumber"
       :count="progressCount"
     />
+    <div class="hidden">
+      <div id="move" ref="moveBlock">
+        {{ nowFile.name }}
+      </div>
+    </div>
   </div>
 </template>
 
@@ -53,7 +86,8 @@ import { ref, reactive } from "vue";
 import ResourceItem from "@/components/resource-item.vue";
 import ProgressDialog from "@/components/progress-dialog.vue";
 import ResourceFile from "@/target/file.js";
-import { checkMediaFile } from "@/utils/index.js";
+import Line from "@/target/line.js";
+import { checkMediaFile, checkFontFile } from "@/utils/index.js";
 import ft from "@/utils/ffmpeg.js";
 
 ft.instance();
@@ -70,6 +104,8 @@ const progressVisible = ref(false);
 
 // 媒体资源 图片 视频 音频
 const mediaList = reactive([]);
+// 字体资源
+const fontList = reactive([]);
 let addType = "";
 const addFile = (type) => {
   addType = type;
@@ -91,9 +127,25 @@ const changeFile = function (e) {
         continue;
       }
     }
+    if (addType === "picture") {
+      if (checkMediaFile(file)) {
+        file.setPicture();
+        mediaLoadList.push(file);
+        continue;
+      }
+    }
+    if (addType === "font") {
+      if (checkFontFile(file)) {
+        file.setFont();
+        fontLoadList.push(file);
+      }
+    }
   }
-  if (addType === "media") {
+  if (addType === "media" || addType === "picture") {
     loadMediaFile(mediaLoadList);
+  }
+  if (addType === "font") {
+    loadFontFile(fontLoadList);
   }
 };
 // 加载文件
@@ -104,6 +156,20 @@ const loadMediaFile = async (list) => {
   for (const file of list) {
     await ft.loadFile(file);
     mediaList.push(file);
+    i++;
+    setLoadProgressNumber(i);
+  }
+  setTimeout(() => {
+    closeLoadProgress();
+  }, 100);
+};
+const loadFontFile = async (list) => {
+  console.log("加载文件", list);
+  openLoadProgress(list.length, "加载字体文件");
+  let i = 0;
+  for (const file of list) {
+    await ft.loadFile(file);
+    fontList.push(file);
     i++;
     setLoadProgressNumber(i);
   }
@@ -138,6 +204,187 @@ const handlePlay = (file) => {
 const handleDel = (index) => {
   console.log("删除文件", index);
   mediaList.splice(index, 1);
+};
+/**
+ * 文件列表拖拽开始
+ * @param $event
+ * @param file
+ */
+const fileDragStart = ($event, file) => {
+  console.log("文件列表拖拽开始", $event, file);
+  dragType = "create";
+  nowFile.value = file;
+  let width = nowFile.value.duration * 2;
+  moveBlock.value.style.width = (width > 270 ? 270 : width) + "px";
+  $event.dataTransfer.setDragImage(moveBlock.value, 0, 0);
+};
+/**
+ * 文件列表拖拽结束
+ * @param $event
+ * @param file
+ */
+const fileDragEnd = ($event, file) => {
+  console.log("文件列表拖拽结束", $event, file);
+  lineIn.value = false;
+};
+/**
+ * 添加到时间轴最后
+ * @param item
+ */
+const appendFile = (item) => {
+  console.log("双击添加", item);
+  const file = new Line(item);
+  file.setMedia();
+  console.log("file", file);
+  timeLineList.value.push(file);
+};
+
+// 时间轴
+const timeLineList = ref([]);
+const moveStartPosition = ref({ x: 0, y: 0 });
+let moveIndex = "";
+let moveIn = "";
+// 拖动类型
+let dragType = "create";
+// 拖动的当前文件
+const nowFile = ref({});
+// 拖动的dom
+const moveBlock = ref(null);
+// 是否拖入时间揍
+const lineIn = ref(false);
+/**
+ * 时间轴放入
+ * @param index
+ */
+const lineItemDropFile = (index) => {
+  console.log("时间轴放入", index);
+  // 放在某个轴上
+  if (dragType === "create") {
+    const file = new Line(mediaList[index]);
+    file.setMedia();
+    console.log("file", file);
+    timeLineList.value.splice(index, 0, file);
+  }
+  // 移动
+  if (dragType === "move") {
+    console.log("移动", moveIndex, index);
+    let list = timeLineList.value;
+    if (moveIndex > index) {
+      const item = timeLineList.value[moveIndex];
+      list.splice(moveIndex, 1);
+      list.splice(index, 0, item);
+    } else {
+      const item = timeLineList.value[moveIndex];
+      console.log("移动", item, list);
+      list.splice(moveIndex, 1);
+      list.splice(index, 0, item);
+      console.log("移动到后面", list);
+    }
+    timeLineList.value = list;
+  }
+};
+const lineDragStart = ($event, index) => {
+  console.log("时间轴拖动开始", index, $event);
+  dragType = "move";
+  moveIndex = index;
+  moveStartPosition.value.x = $event.pageX;
+  moveStartPosition.value.y = $event.pageY;
+};
+/**
+ * 时间轴拖动结束
+ * @param $event
+ * @constructor
+ */
+const lineDragEnd = ($event) => {
+  console.log("时间轴拖动结束", $event);
+  console.log(
+    "移动了",
+    $event.pageX - moveStartPosition.value.x,
+    $event.pageY - moveStartPosition.value.y
+  );
+  timeLineList.value[moveIndex].left +=
+    $event.pageX - moveStartPosition.value.x;
+  moveStartPosition.value.x = 0;
+  moveStartPosition.value.y = 0;
+  moveIndex = "";
+};
+/**
+ * 时间轴内容进入
+ * @param $event
+ * @constructor
+ */
+const lineItemDragEnter = ($event, index) => {
+  console.log("时间轴进入", $event);
+  $event.preventDefault(); //阻止默认事件
+  moveIn = index;
+};
+/**
+ * 时间轴内容离开
+ * @param $event
+ * @constructor
+ */
+const lineItemDragLeave = ($event) => {
+  console.log("时间轴离开", $event);
+  $event.preventDefault(); //阻止默认事件
+  moveIn = "";
+};
+/**
+ * 时间轴内容移动
+ * @param $event
+ */
+const lineItemDragMove = ($event) => {
+  console.log("拖拽移动", $event);
+  console.log(
+    "移动了",
+    $event.pageX - moveStartPosition.value.x,
+    $event.pageY - moveStartPosition.value.y
+  );
+};
+/**
+ * 时间轴进入
+ * @param $event
+ * @constructor
+ */
+const lineDragEnter = ($event) => {
+  console.log("时间列表进入", $event);
+  $event.preventDefault(); //阻止默认事件
+  lineIn.value = true;
+};
+
+/**
+ * 时间轴离开
+ * @param $event
+ * @param file
+ * @constructor
+ */
+const lineDragLeave = ($event, file) => {
+  console.log("时间列表离开", $event);
+  $event.preventDefault(); //阻止默认事件
+  lineIn.value = false;
+};
+
+/**
+ * 时间轴阻止默认
+ * @param $event
+ * @constructor
+ */
+const lineDragOver = ($event) => {
+  $event.preventDefault(); //阻止默认事件
+};
+
+/**
+ * 时间轴放入
+ * @param $event
+ */
+const lineDropFile = ($event) => {
+  console.log("时间列表放入", dragType, $event);
+  // 放在空的地方
+  if (dragType === "create") {
+    let file = new Line(nowFile.value);
+    file.setMedia();
+    console.log("file", file);
+    timeLineList.value.push(file);
+  }
 };
 </script>
 
@@ -199,6 +446,36 @@ const handleDel = (index) => {
     box-sizing: border-box;
     border-bottom: $border-color 1px solid;
     overflow-x: scroll;
+    .line {
+      cursor: move;
+      height: 20px;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      line-height: 20px;
+      padding-left: 10px;
+      box-sizing: border-box;
+      border-bottom: $border-color 1px solid;
+      background-color: rgba(248, 235, 174, 0.78);
+      user-select: none;
+      overflow: hidden;
+      &:last-child {
+        border-bottom: none;
+      }
+    }
+  }
+}
+
+.hidden {
+  position: fixed;
+  left: 0;
+  top: -100px;
+
+  #move {
+    min-width: 20px;
+    height: 20px;
+    background: red;
+    border: 1px solid #07b3c9;
+    overflow: hidden;
   }
 }
 </style>

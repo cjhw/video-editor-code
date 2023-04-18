@@ -11,7 +11,12 @@
         <div class="date">{{ file.sizeStr }}</div>
       </div>
       <div class="handle">
-        <a-button class="btn" size="small" type="primary" @click="handlePlay"
+        <a-button
+          v-if="file.mime.indexOf('image') === -1"
+          class="btn"
+          size="small"
+          type="primary"
+          @click="handlePlay"
           >播放</a-button
         >
         <a-button class="btn" size="small" danger @click="handleDel"
@@ -19,6 +24,8 @@
         >
         <div class="file-type">
           <div class="mp4" v-if="file.ext === 'mp4'">mp4</div>
+          <div class="jpg" v-if="file.ext === 'jpg'">jpg</div>
+          <div class="png" v-if="file.ext === 'png'">png</div>
           <div class="mp3" v-if="file.ext === 'mp3'">mp3</div>
         </div>
       </div>
@@ -124,6 +131,14 @@ const handlePlay = () => {
         .mp3 {
           color: #fff;
           background-color: #d9b608;
+        }
+        .jpg {
+          color: #fff;
+          background-color: #743269;
+        }
+        .png {
+          color: #fff;
+          background-color: #687432;
         }
       }
     }

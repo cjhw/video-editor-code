@@ -63,6 +63,9 @@ export default class Ffmpeg {
           new Blob([fileData.buffer], { type: file.mime })
         );
         file.setUrl(url);
+        if (file.isImage()) {
+          file.setCover(url);
+        }
       }
       if (file.isVideo()) {
         this.readCover(filePath).then((url) => {
