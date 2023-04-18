@@ -13,29 +13,61 @@
         <a-button type="primary">添加媒体</a-button>
         <a-button type="primary">添加媒体</a-button>
       </div>
+      <div class="file-list">
+        <resource-item
+          draggable="true"
+          v-for="(item, index) in mediaList"
+          :file="item"
+          :key="item.key"
+          @play="handlePlay(item)"
+          @del="handleDel(index)"
+        />
+      </div>
     </div>
     <div class="view">
-      <div class="window"></div>
+      <div class="window">
+        <div class="screen">
+          <video :src="previewSrc" controls autoplay></video>
+        </div>
+        <div class="screen">
+          <video :src="renderSrc" controls autoplay></video>
+        </div>
+      </div>
       <div class="time-line">
         <div class="line"></div>
       </div>
       <div class="tool-bar"></div>
     </div>
-    <!-- 时间轴示例-->
-    <div class="hidden">
-      <div id="move" ref="moveBlock"></div>
-    </div>
+    <!--加载弹窗-->
+    <progress-dialog
+      :title="progressTitle"
+      v-if="progressVisible"
+      :number="progressNumber"
+      :count="progressCount"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, reactive } from "vue";
+import ResourceItem from "@/components/resource-item.vue";
+import ProgressDialog from "@/components/progress-dialog.vue";
 import ResourceFile from "@/target/file.js";
 import { checkMediaFile } from "@/utils/index.js";
 import ft from "@/utils/ffmpeg.js";
 
 ft.instance();
 const uploadInput = ref(null);
+const previewSrc = ref("");
+// 预览
+const renderSrc = ref("");
+
+// 进度条
+const progressTitle = ref("");
+const progressNumber = ref(0);
+const progressCount = ref(100);
+const progressVisible = ref(false);
+
 // 媒体资源 图片 视频 音频
 const mediaList = reactive([]);
 let addType = "";
@@ -56,7 +88,6 @@ const changeFile = function (e) {
       if (checkMediaFile(file)) {
         file.setMedia();
         mediaLoadList.push(file);
-        // mediaList.push(file)
         continue;
       }
     }
@@ -68,12 +99,45 @@ const changeFile = function (e) {
 // 加载文件
 const loadMediaFile = async (list) => {
   console.log("加载文件", list);
+  openLoadProgress(list.length, "加载资源文件");
   let i = 0;
   for (const file of list) {
     await ft.loadFile(file);
     mediaList.push(file);
     i++;
+    setLoadProgressNumber(i);
   }
+  setTimeout(() => {
+    closeLoadProgress();
+  }, 100);
+};
+
+// 打开进度条
+const openLoadProgress = (count, title = "加载中") => {
+  progressVisible.value = true;
+  progressCount.value = count;
+  progressNumber.value = 0;
+  progressTitle.value = title;
+};
+// 设置进度条值
+const setLoadProgressNumber = (val) => {
+  progressNumber.value = val;
+};
+// 关闭进度条
+const closeLoadProgress = () => {
+  progressVisible.value = false;
+  progressCount.value = 0;
+  progressNumber.value = 0;
+  progressTitle.value = "";
+};
+
+const handlePlay = (file) => {
+  console.log("播放文件", file);
+  previewSrc.value = file.url;
+};
+const handleDel = (index) => {
+  console.log("删除文件", index);
+  mediaList.splice(index, 1);
 };
 </script>
 
@@ -114,6 +178,20 @@ const loadMediaFile = async (list) => {
     box-sizing: border-box;
     border-bottom: $border-color 1px solid;
     display: flex;
+    .screen {
+      flex: 1;
+      box-sizing: border-box;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      &:first-child {
+        border-right: $border-color 1px solid;
+      }
+    }
+    video {
+      width: 100%;
+      max-height: 100%;
+    }
   }
   .time-line {
     width: calc(100vw - $resource-width);
