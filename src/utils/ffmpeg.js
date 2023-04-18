@@ -252,6 +252,9 @@ export default class Ffmpeg {
     console.log("文件1", this.readDir());
     console.log("文件2", this.readDir(this.resourceDir));
     let textCmdList = [];
+    timelineList.sort((a, b) => {
+      return b.type.indexOf("media");
+    });
     timelineList.forEach((time) => {
       console.log("time", time, time.getLeftSecond());
       if (time.type === "media") {
