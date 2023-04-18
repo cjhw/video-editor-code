@@ -31,6 +31,8 @@ export default class ResourceFile {
     this.audioType = "";
     this.audioRate = "";
     this.audioInfo = "";
+    // 序列帧
+    this.track = [];
     this.setDate();
   }
 
@@ -53,6 +55,9 @@ export default class ResourceFile {
     this.fileType = "media";
     this.mime = this.file.type.split(",")[0];
     this.ext = this.name.split(".")[this.name.split(".").length - 1];
+  }
+  setTrack(track) {
+    this.track = track;
   }
   setPicture() {
     this.fileType = "picture";

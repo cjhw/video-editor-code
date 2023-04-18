@@ -16,6 +16,8 @@ export default class Ffmpeg {
   static resourceDir = "resource";
   // 缓存目录
   static tmpDir = "mediaTmp";
+  // 序列帧目录
+  static frameDir = "frame";
   // 渲染完的文件名
   static renderFileName = "render.mp4";
   static async instance() {
@@ -68,12 +70,14 @@ export default class Ffmpeg {
         }
       }
       if (file.isVideo()) {
-        this.readCover(filePath).then((url) => {
+        this.readCover(filePath).then(async (url) => {
           file.setCover(url);
           // console.log('file',file)
           console.log("全部日志", this.message);
           file.setInfo(this.fileInfoFilter(this.message));
           this.clearMessage();
+          const track = await this.generateFrame(filePath);
+          file.setTrack(track);
           resolve();
         });
       } else if (file.isAudio()) {
@@ -97,6 +101,30 @@ export default class Ffmpeg {
       );
       resolve(url);
     });
+  }
+
+  static async generateFrame(filePath) {
+    console.log("生成序列帧");
+    const track = [];
+    this.ffmpeg.FS("mkdir", this.frameDir);
+    let cmd = `-i ${filePath} -r 1 -q:v 2 -f image2 /${this.frameDir}/%3d.jpeg`;
+    let args = cmd.split(" ");
+    console.log("args", args);
+    await this.ffmpeg.run(...args);
+    const fileList = this.ffmpeg.FS("readdir", "/" + this.frameDir);
+    console.log("文件列表", fileList);
+    fileList.forEach((v) => {
+      if (v !== "." && v !== "..") {
+        const path = this.frameDir + "/" + v;
+        const img = this.ffmpeg.FS("readFile", path);
+        let imgData = URL.createObjectURL(
+          new Blob([img.buffer], { type: "image/jpeg" })
+        );
+        track.push(imgData);
+        console.log("序列帧", imgData);
+      }
+    });
+    return track;
   }
 
   static async readCover(path) {

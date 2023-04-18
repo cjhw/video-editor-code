@@ -43,7 +43,8 @@
         @dragover="lineDragOver"
         @drop="lineDropFile"
       >
-        <span
+        <img v-for="img in track" :src="img" alt="序列帧" />
+        <div
           class="line"
           draggable="true"
           v-for="(file, index) in timeLineList"
@@ -62,7 +63,7 @@
           @drop.prevent.stop="lineItemDropFile(index)"
         >
           {{ file.name }}
-        </span>
+        </div>
       </div>
       <div class="tool-bar"></div>
     </div>
@@ -95,6 +96,8 @@ const uploadInput = ref(null);
 const previewSrc = ref("");
 // 预览
 const renderSrc = ref("");
+// 序列帧
+const track = ref([]);
 
 // 进度条
 const progressTitle = ref("");
@@ -156,6 +159,10 @@ const loadMediaFile = async (list) => {
   for (const file of list) {
     await ft.loadFile(file);
     mediaList.push(file);
+    if (file.track.length > 0) {
+      track.value.push(...file.track);
+      console.log(track.value);
+    }
     i++;
     setLoadProgressNumber(i);
   }
@@ -442,10 +449,17 @@ const lineDropFile = ($event) => {
   }
   .time-line {
     width: calc(100vw - $resource-width);
+    overflow-x: auto;
     height: 300px;
     box-sizing: border-box;
     border-bottom: $border-color 1px solid;
     overflow-x: scroll;
+    white-space: nowrap;
+    img {
+      display: inline-block;
+      width: auto;
+      width: 160px;
+    }
     .line {
       cursor: move;
       height: 20px;
