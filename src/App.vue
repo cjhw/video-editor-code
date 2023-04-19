@@ -90,6 +90,11 @@
       </div>
     </div>
   </div>
+  <edit-picture-message
+    v-model:visible="visible"
+    @onOk="handleCreatePic"
+    @onCancel="handleCancel"
+  />
 </template>
 
 <script setup>
@@ -97,6 +102,7 @@ import { ref, reactive, computed } from "vue";
 import { Modal } from "ant-design-vue";
 import ResourceItem from "@/components/resource-item.vue";
 import ProgressDialog from "@/components/progress-dialog.vue";
+import editPictureMessage from "./components/editPictureMessage.vue";
 import ResourceFile from "@/target/file.js";
 import Line from "@/target/line.js";
 import ToolTab from "@/components/tool-tab.vue";
@@ -116,6 +122,10 @@ const progressTitle = ref("");
 const progressNumber = ref(0);
 const progressCount = ref(100);
 const progressVisible = ref(false);
+
+// 贴图编辑弹窗
+const visible = ref(false);
+const curEditPic = ref();
 
 // 媒体资源 图片 视频 音频
 const mediaList = reactive([]);
@@ -254,13 +264,23 @@ const appendFile = (item) => {
   console.log("双击添加", item);
   const file = new Line(item);
   if (item.fileType === "picture") {
-    file.setPicture();
+    curEditPic.value = file;
+    visible.value = true;
   } else if (item.fileType === "media") {
     track.value = item.track;
     file.setMedia();
   }
   console.log("file", file);
   timeLineList.value.push(file);
+};
+
+// 编辑视频信息弹窗
+const handleCreatePic = ({ picX, picY, isMarquee }) => {
+  curEditPic.value.setPicture(picX, picY, isMarquee);
+};
+
+const handleCancel = () => {
+  timeLineList.value.pop();
 };
 
 // 时间轴
@@ -286,7 +306,8 @@ const lineItemDropFile = (index) => {
   if (dragType === "create") {
     const file = new Line(mediaList[index]);
     if (mediaList[index].fileType === "picture") {
-      file.setPicture();
+      curEditPic.value = file;
+      visible.value = true;
     } else if (mediaList[index].fileType === "media") {
       track.value = mediaList[index].track;
       file.setMedia();
@@ -412,7 +433,8 @@ const lineDropFile = ($event) => {
   if (dragType === "create") {
     let file = new Line(nowFile.value);
     if (nowFile.value.fileType === "picture") {
-      file.setPicture();
+      curEditPic.value = file;
+      visible.value = true;
     } else if (nowFile.value.fileType === "media") {
       track.value = nowFile.value.track;
       file.setMedia();
@@ -422,7 +444,7 @@ const lineDropFile = ($event) => {
   }
 };
 
-const handleCreateText = (text, time) => {
+const handleCreateText = ({ text, time, fontSize, fontX, fontY }) => {
   let data = {
     key: "",
     name: text,
@@ -431,7 +453,7 @@ const handleCreateText = (text, time) => {
   };
   const item = new Line(data);
   item.setText();
-  item.setFont(fontList[0]?.getFSName());
+  item.setFont(fontList[0]?.getFSName(), fontSize, fontX, fontY);
   console.log("添加", item, fontList[0]?.getFSName());
   timeLineList.value.push(item);
 };
@@ -504,7 +526,7 @@ const handleExport = () => {
 
   .tool-bar {
     display: flex;
-    height: 200px;
+    height: 300px;
     justify-content: space-around;
   }
 }

@@ -272,7 +272,9 @@ export default class Ffmpeg {
         // cmd.push('-vf drawtext=fontsize=60:fontfile=\'/' + this.resourceDir +'/' +time.getFont() + '\':text=' + time.name + ':fontcolor=green:enable=lt(mod(t\\,3)\\,1):box=1:boxcolor=yellow')
         // 显示
         cmd.push(
-          "-vf drawtext=fontsize=60:fontfile='/" +
+          "-vf drawtext=fontsize=" +
+            time.fontSize +
+            ":fontfile='/" +
             this.resourceDir +
             "/" +
             time.getFont() +
@@ -281,8 +283,11 @@ export default class Ffmpeg {
             ":fontcolor=skyblue:enable='between(t," +
             time.getLeftSecond() +
             "," +
-            time.duration +
-            ")':box=1:boxcolor=yellow "
+            (time.getLeftSecond() + time.duration) +
+            ")':box=1:boxcolor=yellow:x=" +
+            time.fontX +
+            ":y=" +
+            time.fontY
         );
         // 多条
         // textCmdList.push('drawtext=fontsize=60:fontfile=\'/' + this.resourceDir +'/' +time.getFont() + '\':text=' + time.name + ':fontcolor=green:enable=\'between(t,' + time.getLeftSecond() +','+(time.getLeftSecond() + 6)+')\':box=1:boxcolor=yellow')
@@ -294,10 +299,21 @@ export default class Ffmpeg {
             "/" +
             time.getFile() +
             "," +
-            "colorkey=white:0.01:1.0[wm];[in][wm]overlay=30:10[out]"
+            `colorkey=white:0.01:1.0[wm];[in][wm]overlay=${
+              time.isMarquee
+                ? "x=mod(50*t\\,main_w):y=abs(sin(t))*h*0.7[out]"
+                : "x=" + time.picX + ":y=" + time.picY
+            }`
         );
       }
     });
+
+    // x=mod(50*t\\,main_w):y=abs(sin(t))*h*0.7[out]
+    // :enable='between(t," +
+    // time.getLeftSecond() +
+    // "," +
+    // (time.getLeftSecond() + time.duration) +
+    // ")'
     // const textCmd = '-vf "' + textCmdList.join(',') + '"'
     // console.log('文字命令',textCmd)
     // cmd.push(textCmd)

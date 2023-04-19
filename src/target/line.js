@@ -16,7 +16,14 @@ export default class Line {
     this.color = randColor();
     // 原始资源文件名
     this.fileKey = file.key;
+    // 额外属性
     this.font = "";
+    this.fontSize = "";
+    this.fontX = "";
+    this.fontY = "";
+    this.picX = "";
+    this.picY = "";
+    this.isMarquee = false;
   }
 
   setMedia() {
@@ -25,12 +32,19 @@ export default class Line {
   setText() {
     this.type = "text";
   }
-  setPicture() {
+  setPicture(picX = "0", picY = "0", isMarquee = false) {
+    debugger;
     this.type = "picture";
     this.width = 100;
+    this.picX = picX;
+    this.picY = picY;
+    this.isMarquee = isMarquee;
   }
-  setFont(path) {
+  setFont(path, fontSize = "20", fontX = "0", fontY = "0") {
     this.font = path;
+    this.fontSize = fontSize;
+    this.fontX = fontX;
+    this.fontY = fontY;
   }
   getFont() {
     return this.font;
