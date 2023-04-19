@@ -27,15 +27,22 @@
         />
       </div>
       <div class="tool-bar">
-        <tool-tab @create="handleCreateText" @render="handleRender" />
+        <tool-tab
+          @create="handleCreateText"
+          @render="handleRender"
+          @preview="previewRender"
+          @export="handleExport"
+        />
       </div>
     </div>
     <div class="view">
       <div class="window">
         <div class="screen">
+          播放视频区域
           <video :src="previewSrc" controls autoplay></video>
         </div>
         <div class="screen">
+          预览区域
           <video :src="renderSrc" controls autoplay></video>
         </div>
       </div>
@@ -50,9 +57,10 @@
         <div
           class="line"
           draggable="true"
-          v-for="(file, index) in filterTimeLineList"
+          v-for="(file, index) in timeLineList"
           :title="file.name"
           :style="{
+            display: file.type === 'media' ? 'none' : 'block',
             width: file.width + 'px',
             'margin-left': file.left + 'px',
             background: file.color,
@@ -86,6 +94,7 @@
 
 <script setup>
 import { ref, reactive, computed } from "vue";
+import { Modal } from "ant-design-vue";
 import ResourceItem from "@/components/resource-item.vue";
 import ProgressDialog from "@/components/progress-dialog.vue";
 import ResourceFile from "@/target/file.js";
@@ -124,6 +133,7 @@ const changeFile = function (e) {
   const fontLoadList = [];
   console.log("文件列表", files);
   for (let i = 0; i < files.length; i++) {
+    console.log(files[i].slice(0, 16));
     const file = new ResourceFile(files[i]);
     console.log("文件", file);
     file.setSize("AUTO");
@@ -223,8 +233,8 @@ const fileDragStart = ($event, file) => {
   console.log("文件列表拖拽开始", $event, file);
   dragType = "create";
   nowFile.value = file;
-  let width = nowFile.value.duration * 160;
-  moveBlock.value.style.width = (width > 270 ? 270 : width) + "px";
+  let width = 100;
+  moveBlock.value.style.width = width + "px";
   $event.dataTransfer.setDragImage(moveBlock.value, 0, 0);
 };
 /**
@@ -243,17 +253,18 @@ const fileDragEnd = ($event, file) => {
 const appendFile = (item) => {
   console.log("双击添加", item);
   const file = new Line(item);
-  track.value = item.track;
-  file.setMedia();
+  if (item.fileType === "picture") {
+    file.setPicture();
+  } else if (item.fileType === "media") {
+    track.value = item.track;
+    file.setMedia();
+  }
   console.log("file", file);
   timeLineList.value.push(file);
 };
 
 // 时间轴
 const timeLineList = ref([]);
-const filterTimeLineList = computed(() => {
-  return timeLineList.value.filter((time) => time.type !== "media");
-});
 const moveStartPosition = ref({ x: 0, y: 0 });
 let moveIndex = "";
 let moveIn = "";
@@ -274,8 +285,12 @@ const lineItemDropFile = (index) => {
   // 放在某个轴上
   if (dragType === "create") {
     const file = new Line(mediaList[index]);
-    track.value = mediaList[index].track;
-    file.setMedia();
+    if (mediaList[index].fileType === "picture") {
+      file.setPicture();
+    } else if (mediaList[index].fileType === "media") {
+      track.value = mediaList[index].track;
+      file.setMedia();
+    }
     console.log("file", file);
     timeLineList.value.splice(index, 0, file);
   }
@@ -320,6 +335,7 @@ const lineDragEnd = ($event) => {
     $event.pageX - moveStartPosition.value.x;
   moveStartPosition.value.x = 0;
   moveStartPosition.value.y = 0;
+  console.log(timeLineList);
   moveIndex = "";
 };
 /**
@@ -395,8 +411,12 @@ const lineDropFile = ($event) => {
   // 放在空的地方
   if (dragType === "create") {
     let file = new Line(nowFile.value);
-    track.value = nowFile.value.track;
-    file.setMedia();
+    if (nowFile.value.fileType === "picture") {
+      file.setPicture();
+    } else if (nowFile.value.fileType === "media") {
+      track.value = nowFile.value.track;
+      file.setMedia();
+    }
     console.log("file", file);
     timeLineList.value.push(file);
   }
@@ -429,7 +449,6 @@ const updateRender = (progress) => {
   if (progress.ratio >= 100) {
     setTimeout(() => {
       closeLoadProgress();
-      previewRender();
     }, 1000);
   }
 };
@@ -439,7 +458,20 @@ const previewRender = () => {
     renderSrc.value = res;
   });
 };
-window.ft = ft;
+
+const handleExport = () => {
+  ft.readFileAsBuffer(ft.renderFileName).then((res) => {
+    console.log("导出", res);
+    const blob = new Blob(res, { type: "video/mp4" });
+    console.log(blob);
+    const formData = new FormData();
+    formData.append("file", blob);
+    console.log("传给后端的数据", formData.get("file"));
+    Modal.success({
+      content: "请在控制台查看传给后端的数据",
+    });
+  });
+};
 </script>
 
 <style lang="scss" scoped>
@@ -489,6 +521,7 @@ window.ft = ft;
       flex: 1;
       box-sizing: border-box;
       display: flex;
+      flex-direction: column;
       justify-content: center;
       align-items: center;
       &:first-child {

@@ -11,6 +11,8 @@
       <div class="handle-btn">
         <a-button @click="handleCreate">添加</a-button>
         <a-button @click="handleRender">渲染</a-button>
+        <a-button @click="handlePreview">预览</a-button>
+        <a-button @click="handleExport">导出</a-button>
       </div>
     </div>
     <div></div>
@@ -21,7 +23,7 @@
 import { ref } from "vue";
 const text = ref("");
 const time = ref();
-const emit = defineEmits(["create", "render"]);
+const emit = defineEmits(["create", "render", "preview", "export"]);
 const handleCreate = () => {
   console.log("添加", text.value);
   emit("create", text.value, time.value);
@@ -30,6 +32,14 @@ const handleCreate = () => {
 const handleRender = () => {
   console.log("渲染");
   emit("render");
+};
+const handlePreview = () => {
+  console.log("预览");
+  emit("preview");
+};
+const handleExport = () => {
+  console.log("导出");
+  emit("export");
 };
 </script>
 

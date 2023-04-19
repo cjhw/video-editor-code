@@ -25,6 +25,10 @@ export default class Line {
   setText() {
     this.type = "text";
   }
+  setPicture() {
+    this.type = "picture";
+    this.width = 100;
+  }
   setFont(path) {
     this.font = path;
   }

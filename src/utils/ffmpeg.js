@@ -104,6 +104,13 @@ export default class Ffmpeg {
     });
   }
 
+  static readFileAsBuffer(filePath) {
+    return new Promise(async (resolve) => {
+      const data = this.ffmpeg.FS("readFile", filePath);
+      resolve(data);
+    });
+  }
+
   static async generateFrame(filePath, frameDir) {
     console.log("生成序列帧");
     const track = [];
@@ -271,14 +278,24 @@ export default class Ffmpeg {
             time.getFont() +
             "':text=" +
             time.name +
-            ":fontcolor=green:enable='between(t," +
+            ":fontcolor=skyblue:enable='between(t," +
             time.getLeftSecond() +
             "," +
-            (time.getLeftSecond() + 6) +
+            time.duration +
             ")':box=1:boxcolor=yellow "
         );
         // 多条
         // textCmdList.push('drawtext=fontsize=60:fontfile=\'/' + this.resourceDir +'/' +time.getFont() + '\':text=' + time.name + ':fontcolor=green:enable=\'between(t,' + time.getLeftSecond() +','+(time.getLeftSecond() + 6)+')\':box=1:boxcolor=yellow')
+      }
+      if (time.type === "picture") {
+        cmd.push(
+          "-vf movie=/" +
+            this.resourceDir +
+            "/" +
+            time.getFile() +
+            "," +
+            "colorkey=white:0.01:1.0[wm];[in][wm]overlay=30:10[out]"
+        );
       }
     });
     // const textCmd = '-vf "' + textCmdList.join(',') + '"'
