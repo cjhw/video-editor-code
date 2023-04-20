@@ -1,4 +1,4 @@
-const filterType = ["audio", "video", "image"];
+const filterType = ["audio", "video"];
 const fontExt = ["ttc", "ttf", "fon"];
 
 // 生成uuid
@@ -33,6 +33,16 @@ export function checkMediaFile(file) {
   });
   return status;
 }
+
+export function checkImageFile(file) {
+  let status = false;
+
+  if (file.type.toLowerCase().indexOf("image") !== -1) {
+    status = true;
+  }
+  return status;
+}
+
 export function checkFontFile(file) {
   if (file.type) {
     return false;

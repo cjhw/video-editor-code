@@ -33,7 +33,6 @@ export default class Line {
     this.type = "text";
   }
   setPicture(picX = "0", picY = "0", isMarquee = false) {
-    debugger;
     this.type = "picture";
     this.width = 100;
     this.picX = picX;

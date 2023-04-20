@@ -54,26 +54,36 @@
         @drop="lineDropFile"
       >
         <img v-for="img in track" :src="img" alt="序列帧" />
-        <div
-          class="line"
-          draggable="true"
-          v-for="(file, index) in timeLineList"
-          :title="file.name"
-          :style="{
-            display: file.type === 'media' ? 'none' : 'block',
-            width: file.width + 'px',
-            'margin-left': file.left + 'px',
-            background: file.color,
-          }"
-          :key="'timeLine' + file.key"
-          @dragstart="lineDragStart($event, index)"
-          @dragend="lineDragEnd"
-          @dragenter="lineItemDragEnter($event, index)"
-          @dragleave="lineItemDragLeave"
-          @dragover="lineItemDragMove"
-          @drop.prevent.stop="lineItemDropFile(index)"
-        >
-          {{ file.name }}
+        <div>
+          <div
+            class="line"
+            draggable="true"
+            v-for="(file, index) in timeLineList"
+            :title="file.name"
+            :style="{
+              display: file.type === 'media' ? 'none' : 'block',
+              width: file.width + 'px',
+              'margin-left': file.left + 'px',
+              background: file.color,
+            }"
+            :key="'timeLine' + file.key"
+            @dragstart="lineDragStart($event, index)"
+            @dragend="lineDragEnd"
+            @dragenter="lineItemDragEnter($event, index)"
+            @dragleave="lineItemDragLeave"
+            @dragover="lineItemDragMove"
+            @drop.prevent.stop="lineItemDropFile(index)"
+          >
+            {{ file.name }}
+            <a-button
+              size="small"
+              type="primary"
+              danger
+              class="del-btn"
+              @click="handleDelTimeLine(index)"
+              >删除</a-button
+            >
+          </div>
         </div>
       </div>
     </div>
@@ -98,15 +108,20 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from "vue";
-import { Modal } from "ant-design-vue";
+import { ref, reactive } from "vue";
+import { Modal, message } from "ant-design-vue";
 import ResourceItem from "@/components/resource-item.vue";
 import ProgressDialog from "@/components/progress-dialog.vue";
 import editPictureMessage from "./components/editPictureMessage.vue";
 import ResourceFile from "@/target/file.js";
 import Line from "@/target/line.js";
 import ToolTab from "@/components/tool-tab.vue";
-import { checkMediaFile, checkFontFile, uuid } from "@/utils/index.js";
+import {
+  checkMediaFile,
+  checkImageFile,
+  checkFontFile,
+  uuid,
+} from "@/utils/index.js";
 import ft from "@/utils/ffmpeg.js";
 
 ft.instance();
@@ -152,19 +167,25 @@ const changeFile = function (e) {
         file.setMedia();
         mediaLoadList.push(file);
         continue;
+      } else {
+        return message.error("资源类型不符合");
       }
     }
     if (addType === "picture") {
-      if (checkMediaFile(file)) {
+      if (checkImageFile(file)) {
         file.setPicture();
         mediaLoadList.push(file);
         continue;
+      } else {
+        return message.error("资源类型不符合");
       }
     }
     if (addType === "font") {
       if (checkFontFile(file)) {
         file.setFont();
         fontLoadList.push(file);
+      } else {
+        return message.error("资源类型不符合");
       }
     }
   }
@@ -444,6 +465,13 @@ const lineDropFile = ($event) => {
   }
 };
 
+const handleDelTimeLine = (index) => {
+  timeLineList.value = timeLineList.value.filter((_, idx) => {
+    console.log(idx, index);
+    return idx !== index;
+  });
+};
+
 const handleCreateText = ({ text, time, fontSize, fontX, fontY }) => {
   let data = {
     key: "",
@@ -580,8 +608,18 @@ const handleExport = () => {
       background-color: rgba(248, 235, 174, 0.78);
       user-select: none;
       overflow: hidden;
+      position: relative;
       &:last-child {
         border-bottom: none;
+      }
+      :deep(.ant-btn) {
+        position: absolute;
+        height: 100%;
+        right: 0px;
+        font-size: 12px;
+        span {
+          height: 100%;
+        }
       }
     }
   }

@@ -298,8 +298,7 @@ export default class Ffmpeg {
             this.resourceDir +
             "/" +
             time.getFile() +
-            "," +
-            `colorkey=white:0.01:1.0[wm];[in][wm]overlay=${
+            `[wm];[in][wm]overlay=${
               time.isMarquee
                 ? "x=mod(50*t\\,main_w):y=abs(sin(t))*h*0.7[out]"
                 : "x=" + time.picX + ":y=" + time.picY
