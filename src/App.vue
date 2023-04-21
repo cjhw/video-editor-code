@@ -289,6 +289,9 @@ const appendFile = (item) => {
     visible.value = true;
   } else if (item.fileType === "media") {
     track.value = item.track;
+    timeLineList.value = timeLineList.value.filter(
+      (item) => item.type !== "media"
+    );
     file.setMedia();
   }
   console.log("file", file);
@@ -331,6 +334,9 @@ const lineItemDropFile = (index) => {
       visible.value = true;
     } else if (mediaList[index].fileType === "media") {
       track.value = mediaList[index].track;
+      timeLineList.value = timeLineList.value.filter(
+        (item) => item.type !== "media"
+      );
       file.setMedia();
     }
     console.log("file", file);
@@ -458,6 +464,9 @@ const lineDropFile = ($event) => {
       visible.value = true;
     } else if (nowFile.value.fileType === "media") {
       track.value = nowFile.value.track;
+      timeLineList.value = timeLineList.value.filter(
+        (item) => item.type !== "media"
+      );
       file.setMedia();
     }
     console.log("file", file);
