@@ -472,7 +472,17 @@ const handleDelTimeLine = (index) => {
   });
 };
 
-const handleCreateText = ({ text, time, fontSize, fontX, fontY }) => {
+const handleCreateText = ({
+  text,
+  time,
+  fontSize,
+  fontColor,
+  fontX,
+  fontY,
+}) => {
+  if (fontList.length === 0) {
+    return message.error("请先添加字体文件");
+  }
   let data = {
     key: "",
     name: text,
@@ -481,7 +491,7 @@ const handleCreateText = ({ text, time, fontSize, fontX, fontY }) => {
   };
   const item = new Line(data);
   item.setText();
-  item.setFont(fontList[0]?.getFSName(), fontSize, fontX, fontY);
+  item.setFont(fontList[0]?.getFSName(), fontSize, fontColor, fontX, fontY);
   console.log("添加", item, fontList[0]?.getFSName());
   timeLineList.value.push(item);
 };

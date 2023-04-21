@@ -18,6 +18,7 @@ export default class Line {
     this.fileKey = file.key;
     // 额外属性
     this.font = "";
+    this.fontColor = "";
     this.fontSize = "";
     this.fontX = "";
     this.fontY = "";
@@ -39,9 +40,16 @@ export default class Line {
     this.picY = picY;
     this.isMarquee = isMarquee;
   }
-  setFont(path, fontSize = "20", fontX = "0", fontY = "0") {
+  setFont(
+    path,
+    fontSize = "20",
+    fontColor = "black",
+    fontX = "0",
+    fontY = "0"
+  ) {
     this.font = path;
     this.fontSize = fontSize;
+    this.fontColor = fontColor;
     this.fontX = fontX;
     this.fontY = fontY;
   }

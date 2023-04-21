@@ -21,6 +21,13 @@
             v-model:value="formState.fontSize"
           />
         </a-form-item>
+        <a-form-item label="字体颜色" name="fontColor">
+          <a-input
+            type="color"
+            placeholder="请输入字幕x轴位置(px)"
+            v-model:value="formState.fontColor"
+          />
+        </a-form-item>
         <a-form-item label="字幕x轴位置" name="fontX">
           <a-input
             placeholder="请输入字幕x轴位置(px)"
@@ -51,6 +58,7 @@ const formState = reactive({
   text: "",
   time: undefined,
   fontSize: undefined,
+  fontColor: undefined,
   fontX: undefined,
   fontY: undefined,
 });

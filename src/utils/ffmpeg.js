@@ -280,11 +280,13 @@ export default class Ffmpeg {
             time.getFont() +
             "':text=" +
             time.name +
-            ":fontcolor=skyblue:enable='between(t," +
+            ":fontcolor=" +
+            time.fontColor +
+            ":enable='between(t," +
             time.getLeftSecond() +
             "," +
             (time.getLeftSecond() + time.duration) +
-            ")':box=1:boxcolor=yellow:x=" +
+            ")':x=" +
             time.fontX +
             ":y=" +
             time.fontY
