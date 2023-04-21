@@ -474,6 +474,10 @@ const lineDropFile = ($event) => {
   }
 };
 
+/**
+ * 删除时间轴
+ * @param {*} index
+ */
 const handleDelTimeLine = (index) => {
   timeLineList.value = timeLineList.value.filter((_, idx) => {
     console.log(idx, index);
@@ -481,6 +485,7 @@ const handleDelTimeLine = (index) => {
   });
 };
 
+// 添加字幕
 const handleCreateText = ({
   text,
   time,
@@ -504,6 +509,8 @@ const handleCreateText = ({
   console.log("添加", item, fontList[0]?.getFSName());
   timeLineList.value.push(item);
 };
+
+// 渲染视频
 const handleRender = () => {
   console.log("渲染视频");
   console.log(timeLineList);
@@ -521,6 +528,8 @@ const updateRender = (progress) => {
     }, 1000);
   }
 };
+
+// 预览视频
 const previewRender = () => {
   ft.readFile(ft.renderFileName).then((res) => {
     console.log("文件", res);
@@ -528,6 +537,7 @@ const previewRender = () => {
   });
 };
 
+// 导出
 const handleExport = () => {
   ft.readFileAsBuffer(ft.renderFileName).then((res) => {
     console.log("导出", res);
