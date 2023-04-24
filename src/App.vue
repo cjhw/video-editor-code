@@ -112,7 +112,7 @@ import { ref, reactive } from "vue";
 import { Modal, message } from "ant-design-vue";
 import ResourceItem from "@/components/resource-item.vue";
 import ProgressDialog from "@/components/progress-dialog.vue";
-import editPictureMessage from "./components/editPictureMessage.vue";
+import editPictureMessage from "./components/edit-picture-message.vue";
 import ResourceFile from "@/target/file.js";
 import Line from "@/target/line.js";
 import ToolTab from "@/components/tool-tab.vue";
